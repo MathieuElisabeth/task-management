@@ -1,6 +1,6 @@
 # task-management
 
-It is a task management application made in Vue 3. This project aims to test what is possible with Vue Js and to discover Vue-router, vuedraggable and event emitter with mitt.
+It is a task management application made in Vue 3. This project aims to test what is possible with Vue Js and to discover Vue-router, vuedraggable and Pinia.
 
 I used Vite to set up my Vue project.
 
@@ -21,3 +21,7 @@ npm run dev
 ```sh
 npm run build
 ```
+
+### Sources
+
+The design comes from a Frontend Mentor exercise.

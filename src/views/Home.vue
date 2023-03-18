@@ -1,106 +1,49 @@
 <template>
-  <div>
-    <h2 class="msg" v-if="boards.length === 0">You don't have Board</h2>
-    <div class="boards-container" v-else>
-      <Board v-for="(board, index) in boards" :key="index" :id="index" :board="board" />
+  <div 
+    v-dragscroll:nochilddrag
+    class="relative h-full w-screen min-h-[calc(100vh-64px)] max-h-[calc(100vh-64px)] overflow-auto bg-light-grey dark:bg-very-dark-grey transition-all "
+    :class="managerStore.sidebar ? ['sm:translate-x-[256px] lg:translate-x-[300px] max-w-[calc(100vw+256px'] : ['translate-x-[0]']"
+  >
+    <div data-dragscroll class="mx-auto w-11/12 pt-6 pb-24 ">
+      <div data-dragscroll v-if="boardsStore.getColumns" class="flex">
+        <Board data-dragscroll />
+        <AddNewColumn class="hidden md:flex" />
+      </div>
+      <NoBoards v-else-if="boardsStore.boards.length === 0" />
+      <EmptyBoard v-else />
     </div>
   </div>
-</template>
+</template >
+  
+<script setup>
+import EmptyBoard from '@/components/board/Empty.vue';
+import Board from '@/components/board/Board.vue'
 
-<script>
-import Board from '@/components/Board.vue'
+import { onMounted } from 'vue';
+import { useBoardsStore } from '@/stores/boards.js';
+import { useManagerStore } from '@/stores/manager.js';
+import NoBoards from '@/components/board/NoBoards.vue';
+import AddNewColumn from '@/components/board/AddNewColumn.vue';
 
-export default {
-  components: {
-    Board
-  },
-  mounted() {
-    let temp = localStorage.getItem("boards")
-    if(temp){
-        this.boards = JSON.parse(temp)
-    }
+const boardsStore = useBoardsStore();
+const managerStore = useManagerStore();
 
-    this.emitter.on('addBoard', data => {
-      this.boards.push({
-        title: data.inputA,
-        color: data.inputB || '#000',
-        items: []
-      })
-    })
-    this.emitter.on('addItem', data => {
-      this.boards[data.boardId].items.push({
-        title: data.inputA,
-        priority: data.inputB || 'low',
-      })
-      localStorage.setItem("boards", JSON.stringify(this.boards))
-    })
-    this.emitter.on('deleteBoard', boardId => {
-      this.boards.splice(boardId, 1)
-      localStorage.setItem("boards", JSON.stringify(this.boards))
-    })
-    this.emitter.on('deleteItem', data => {
-      this.boards[data.boardId].items.splice(data.itemId, 1)
-      localStorage.setItem("boards", JSON.stringify(this.boards))
-    })
-    this.emitter.on('boardSorted', () => {
-      localStorage.setItem("boards", JSON.stringify(this.boards))
-    })
-  },
-  data() {
-    return {
-      boards: [
-        {
-          title: 'To Do',
-          color: 'red',
-          items: []
-        }
-      ]
+onMounted(async () => {
+  //INIT STORAGE
+  boardsStore.$subscribe((mutations, state) => {
+    if (!managerStore.dragging) {
+      localStorage.setItem('boards', JSON.stringify(state))
+    } else {
+      console.log("You are not saving")
     }
-  },
-  watch: {
-    boards() {
-      localStorage.setItem("boards", JSON.stringify(this.boards))
-    }
+  })
+  const storageData = localStorage.getItem("boards")
+  if (storageData === null) {
+    const jsonData = await import("@/assets/json/data.json")
+    boardsStore.boards = jsonData.boards;
+  } else {
+    boardsStore.$state = JSON.parse(storageData)
   }
-}
+  
+}) 
 </script>
-
-<style>
-.msg {
-  color: rgb(255, 255, 255);
-  text-align: center;
-}
-
-.boards-container {
-  display: flex;
-  gap: 1.5em;
-  overflow: auto;
-}
-
-.board {
-  padding: 1em;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, .15);
-  border-top: 5px solid red;
-  border-radius: 4px;
-  background-color: #fff;
-  min-width: 300px;
-}
-
-.board .head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: .5em;
-}
-
-.head .title {
-  font-size: 1.1em;
-  font-weight: bold;
-}
-
-.fa-trash {
-  color: rgb(223, 16, 16);
-  margin-left: .74em;
-  cursor: pointer;
-}
-</style>
